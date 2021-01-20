@@ -19,7 +19,9 @@ class QUdpSocket;
 class QHostAddress;
 
 namespace soslab {
-   
+
+    class SwathCmdRos;
+
     class SwathCom : public QObject {
     Q_OBJECT
     public:
@@ -28,6 +30,8 @@ namespace soslab {
         ~SwathCom() override = default;
 
         SwathCom(const SwathCom &o);
+
+        void setRos(std::shared_ptr<SwathCmdRos> ros) { m_ros = ros; }
 
     signals:
         void sonarAnswerReceived(QByteArray &ba_, const QHostAddress &addr_);
@@ -42,6 +46,8 @@ namespace soslab {
     
     private:
         void m_parse();
+
+        std::shared_ptr<SwathCmdRos> m_ros;
 
         std::shared_ptr<QUdpSocket> m_udpsocket;
         std::shared_ptr<QHostAddress> m_ha;

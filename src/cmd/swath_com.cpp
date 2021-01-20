@@ -7,6 +7,7 @@
 #include <iostream>
 
 #include "ros/ros.h"
+#include "swath_cmd_ros.h"
 
 using namespace soslab;
 
@@ -46,16 +47,10 @@ void SwathCom::sonarReadyRead()
         m_udpsocket->readDatagram(ba.data(), dgsize, &addr, &port);
         // emit sonarAnswerReceived(ba, addr);
 
-
-
         bool result = m_parser->readUDPData(&ba);
-        if(result) {
-            for (const auto &i : m_parser->getSamples()) {
-                std::cout << i.m_amp << " ";
-            }
-            std::cout << std::endl;
-            ROS_INFO_STREAM("Data read, sample length is " << m_parser->getSamples().size() << ", read data returned: "
-                                                           << result);
+        if(m_parser->getIsParsed()) {
+            m_ros->publishSonarData(m_parser->getSamples(), m_parser->getSonarHeader());
+            m_ros->publishPointCloud(m_parser->getSamples());
         }
         // printf("data: %s\n", ba.data());
         /* parse range and angle to ros msg and publish */

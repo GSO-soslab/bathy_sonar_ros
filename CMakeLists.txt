@@ -61,11 +61,11 @@ find_package(catkin REQUIRED COMPONENTS
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
-#   Message1.msg
-#   Message2.msg
-# )
+add_message_files(
+  FILES
+  Sample.msg
+  SideScan.msg
+)
 
 ## Generate services in the 'srv' folder
 # add_service_files(
@@ -82,10 +82,12 @@ find_package(catkin REQUIRED COMPONENTS
 # )
 
 ## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   nav_msgs#   sensor_msgs#   std_msgs
-# )
+generate_messages(
+  DEPENDENCIES
+    std_msgs
+    sensor_msgs
+    std_msgs
+)
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -128,6 +130,7 @@ catkin_package(
         sensor_msgs
         std_msgs
         std_srvs
+        message_runtime
 #  DEPENDS system_lib
 )
 
@@ -147,7 +150,8 @@ include_directories(
 add_library(${PROJECT_NAME}_vendor_com
   src/vendor/utilities.cpp
   src/vendor/simplereadparseddata.cpp
-  )
+  src/vendor/pingdata.cpp
+)
 target_link_libraries(${PROJECT_NAME}_vendor_com
   Qt5::Core
   Qt5::Network
@@ -168,7 +172,7 @@ target_link_libraries(${PROJECT_NAME}_com
 
 add_library(${PROJECT_NAME}_cmd_ros
   src/cmd/swath_cmd_ros.cpp
-  src/cmd/swath_proc.cpp src/cmd/swath_proc.h)
+  src/cmd/swath_proc.cpp src/cmd/swath_proc.h src/vendor/PPSProc.h src/vendor/HardwareInterfaceV2.h)
 target_link_libraries(${PROJECT_NAME}_cmd_ros
   ${PROJECT_NAME}_com
   ${catkin_LIBRARIES}

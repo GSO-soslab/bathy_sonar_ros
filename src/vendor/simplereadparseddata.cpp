@@ -32,6 +32,7 @@ bool SimpleReadParsedData::readUDPData(QByteArray* ba)
         memcpy(reinterpret_cast<char*>(blockHeader), ba->constData(), sizeof(blockHeader));    // Copy the first part of the block into the blockheader
         unsigned int blockType = blockHeader[0];
         unsigned int bufferSize = blockHeader[1];
+
         switch(blockType)
         {
             case PARSED_PING_DATA:
@@ -45,6 +46,8 @@ bool SimpleReadParsedData::readUDPData(QByteArray* ba)
                     status = true;
                 }
                 break;
+            default:
+                break;
         }
     }
     else
@@ -55,14 +58,15 @@ bool SimpleReadParsedData::readUDPData(QByteArray* ba)
         if (uint32_t(m_UDPreadBuffer.size()) >= m_UDPreadExpect)
         {
             // We have read in enough data to make a ping
-            if (ReadBuffer(m_UDPreadBuffer.constData(), m_UDPreadExpect))
+            if ((m_isParsed = ReadBuffer(m_UDPreadBuffer.constData(), m_UDPreadExpect)))
             {
                 // Finished with this ping packet; get ready for the next one
                 m_readingBlock = false;
                 m_UDPreadBuffer.clear();
             }
-            else
+            else {
                 status = false;
+            }
         }
     }
     
@@ -76,58 +80,56 @@ std::vector<sample> SimpleReadParsedData::getSamples() {
 bool SimpleReadParsedData::ReadBuffer(const char * pBuffer, unsigned int length)
 {
     // Read the header information
-    unsigned int timeSecSonar = GetUInt(pBuffer);
-    unsigned int timeMsecSonar = GetUInt(pBuffer) / 1000;
-    unsigned int tdrChannel = GetUChar(pBuffer);
-    unsigned int pingNum = GetUInt(pBuffer);
-    m_operatingFreq = GetFloat(pBuffer);
-    m_rxPeriod = GetFloat(pBuffer);
-    unsigned int nProcSamples = GetUShort(pBuffer);
-    double SV = double(GetFloat(pBuffer));
-    m_txCycles = GetUShort(pBuffer);
-    unsigned char dataOptions = GetUChar(pBuffer);
-    eQualityOptions qualOption = eQualityOptions(dataOptions & 0x7);
-    unsigned int pingMode = GetUChar(pBuffer);
-    unsigned int rxSamples = GetUShort(pBuffer);              // Count before filtering
+    m_sonarHeader.timeSecSonar = GetUInt(pBuffer);
+    m_sonarHeader.timeMsecSonar = GetUInt(pBuffer) / 1000;
+    m_sonarHeader.tdrChannel = GetUChar(pBuffer);
+    m_sonarHeader.pingNum = GetUInt(pBuffer);
+    m_sonarHeader.operatingFreq = GetFloat(pBuffer);
+    m_sonarHeader.rxPeriod = GetFloat(pBuffer);
+    m_sonarHeader.nProcSamples = GetUShort(pBuffer);
+    m_sonarHeader.sv = GetFloat(pBuffer);
+    m_sonarHeader.txCycles = GetUShort(pBuffer);
+    m_sonarHeader.dataOptions = GetUChar(pBuffer);
+    eQualityOptions qualOption = eQualityOptions(m_sonarHeader.dataOptions & 0x7);
+    m_sonarHeader.pingMode = GetUChar(pBuffer);
+    m_sonarHeader.rxSamples = GetUShort(pBuffer);              // Count before filtering
     // ... then PARSED_RESERVED_BYTES reserved bytes
     pBuffer += PARSED_RESERVED_BYTES;
     
     // Check the total size of the buffer is OK
-    if (length < (PARSED_PING_DATA_HEADER_SIZE + nProcSamples * PARSED_PING_DATA_ITEM_SIZE))
+    if (length < (PARSED_PING_DATA_HEADER_SIZE + m_sonarHeader.nProcSamples * PARSED_PING_DATA_ITEM_SIZE))
         return false;
     
+    m_samples.clear();
+    m_samples.resize(m_sonarHeader.nProcSamples);
     
-    vector<sample> samples;
-    samples.resize(nProcSamples);
-    
-    for (int i = 0; i < nProcSamples; i++)
+    for (int i = 0; i < m_sonarHeader.nProcSamples; i++)
     {
         int nSamp = GetUShort(pBuffer);
-        samples[i].m_range = GetSampRange(nSamp, SV);
+        m_samples[i].m_range = GetSampRange(nSamp, m_sonarHeader.sv);
         int16_t angleCode = GetShort(pBuffer);
         double angle = angleCode / PARSED_ANGLE_SCALE;
-        samples[i].m_angle_s = sin(angle);
-        samples[i].m_angle_c = cos(angle);
-        samples[i].m_amp = GetUShort(pBuffer);
+        m_samples[i].m_angle_s = sin(angle);
+        m_samples[i].m_angle_c = cos(angle);
+        m_samples[i].m_amp = GetUShort(pBuffer);
         unsigned char qual = GetUChar(pBuffer);
-        samples[i].m_valid = qual == 0;      // 0 = good quality
+        m_samples[i].m_valid = qual == 0;      // 0 = good quality
     }
-    
-    
+
     return true;
 }
 
 // Get the slant range for a sample, using real SV
 double SimpleReadParsedData::GetSampRange(int iSamp, double SV) const
 {
-    return ((iSamp * double(m_rxPeriod) + getTimeOffset()) * SV / 2);
+    return ((iSamp * double(m_sonarHeader.rxPeriod) + getTimeOffset()) * SV / 2);
 }
 
 // Get the fixed time offset for data samples given the version of the sonar and transmit length
 double SimpleReadParsedData::getTimeOffset() const
 {
     double sonarTypeOffset = BSWSnr::V2_SAMPLE_TIME_OFFSET;
-    double transmitPulseOffset = m_txCycles * 0.5 / double(m_operatingFreq);
+    double transmitPulseOffset = m_sonarHeader.txCycles * 0.5 / double(m_sonarHeader.operatingFreq);
     double timeOffset = sonarTypeOffset - transmitPulseOffset;
     return timeOffset;
 }

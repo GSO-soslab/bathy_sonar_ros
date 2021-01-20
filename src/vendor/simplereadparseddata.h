@@ -11,8 +11,21 @@
 
 #include "sample.h"
 
+#include "sonar_data_header.h"
+
 class SimpleReadParsedData
 {
+private:
+
+    bool m_isParsed;
+    std::vector<sample> m_samples;
+    bool m_readingBlock;                            // Currently reading a data block
+    unsigned int m_readingBlockType;                // The type of block being read
+    QByteArray m_UDPreadBuffer;                     // Buffer of bytes read from UDP
+    unsigned int m_UDPreadExpect;                   // Number of bytes to read in the current block
+
+    sonar_data_header m_sonarHeader;
+
 public:
     SimpleReadParsedData();
     
@@ -21,20 +34,13 @@ public:
     double GetSampRange(int iSamp, double SV) const;                // Get the slant range for a sample, using real SV
     double getTimeOffset() const;                                   // Get the fixed time offset for data samples given the version of the sonar and transmit length
 
+    bool getIsParsed() { return m_isParsed; }
+
+    sonar_data_header getSonarHeader() { return m_sonarHeader; }
+
     std::vector<sample> getSamples();
-    
-private:
-    
-    std::vector<sample> m_samples;
-    bool m_readingBlock;                            // Currently reading a data block
-    unsigned int m_readingBlockType;                // The type of block being read
-    QByteArray m_UDPreadBuffer;                     // Buffer of bytes read from UDP
-    unsigned int m_UDPreadExpect;                   // Number of bytes to read in the current block
-    
-    float m_rxPeriod;
-    unsigned int m_txCycles;        // Length of the transmit pulse, in sonar cycles
-    float	m_operatingFreq;		// Sonar frequency of transducer, in Hz, interpreted from FPGA registers.
-    
+
+
 };
 
 #endif // SIMPLEREADPARSEDDATA_H

@@ -42,12 +42,14 @@ namespace soslab {
         void setRange(int range);
         
         void setTxState(bool state);
-       
+
+        bool testCommunication();
+
     protected slots:
         void m_readyRead();
         
     private slots:
-       
+
         void m_setupRemote();
         
         void m_sendMessage(const QByteArray &ba);
@@ -80,7 +82,7 @@ namespace soslab {
         std::shared_ptr<QUdpSocket> m_udpSocket;
     
         std::shared_ptr<QHostAddress> m_ha;
-    
+
     };
     
 }

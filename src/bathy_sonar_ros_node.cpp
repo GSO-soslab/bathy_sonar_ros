@@ -8,13 +8,12 @@
 
 using namespace soslab;
 
-SwathCmdRos *controller;
+std::shared_ptr<SwathCmdRos> controller;
 
 void sighandler(int sig) {
     if(ros::ok()) {
         controller->destroy();
         ros::shutdown();
-        delete controller;
     }
 
     QCoreApplication::quit();
@@ -27,7 +26,7 @@ int main(int argc, char* argv[]) {
 
     signal(SIGINT, sighandler);
 
-    controller = new SwathCmdRos();
+    controller = std::make_shared<SwathCmdRos>();
     controller->initialize();
 
     auto rosSpin = std::thread([](){

@@ -8,6 +8,7 @@
 #include <QObject>
 
 #include <iostream>
+#include <thread>
 
 #include "ros/ros.h"
 
@@ -25,10 +26,15 @@ SwathCmd::SwathCmd() : QObject(nullptr)
     
     m_setTargetIp(m_IPAddress);
     m_udpSocket = std::make_shared<QUdpSocket>();
-    connect(m_udpSocket.get(), &QUdpSocket::readyRead, this, &SwathCmd::m_readyRead);
-    if ( !m_udpSocket->bind(QHostAddress(QHostAddress::Any), TEST_UDP_RX_PORT)) {
-        ROS_WARN_STREAM("could not bind UDP socket to port " << TEST_UDP_RX_PORT);
+    for(int i = 0 ; i < 10 ; i++) {
+        if (!m_udpSocket->bind(QHostAddress(QHostAddress::Any), TEST_UDP_RX_PORT)) {
+            ROS_WARN_STREAM("could not bind UDP socket to port " << TEST_UDP_RX_PORT << ", try: " << i);
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        } else {
+            break;
+        }
     }
+    connect(m_udpSocket.get(), &QUdpSocket::readyRead, this, &SwathCmd::m_readyRead);
 }
 
 SwathCmd::SwathCmd(const SwathCmd &o) : QObject(nullptr) {
@@ -47,7 +53,7 @@ void SwathCmd::initialize() {
 
 void SwathCmd::m_sendMessage(const QByteArray &byteArray) {
     if(m_udpSocket->writeDatagram(byteArray, *m_ha, TEST_UDP_TX_PORT) != byteArray.size()) {
-        // TODO: log[debug]: "could not write all bytes"
+        qDebug() << "could not write all bytes";
     }
 }
 
@@ -164,5 +170,9 @@ void SwathCmd::killSonar() {
 void SwathCmd::setRange(int range) {
     m_range = range;
     m_sendNMEAMessage("SW", "PCT", QString("SNR,RNG,") + QString::number(m_range));
+}
+
+bool SwathCmd::testCommunication() {
+    return false;
 }
 
