@@ -1,6 +1,6 @@
 <launch>
 
     <node pkg="bathy_sonar_ros" type="bathy_sonar_ros_node" name="swath_ros" output="screen">
-
+        <rosparam command="load" file="$(find bathy_sonar_ros)/config/swathRTRos/params.yaml" />
     </node>
 </launch>

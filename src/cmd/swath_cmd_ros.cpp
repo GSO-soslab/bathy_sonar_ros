@@ -27,6 +27,7 @@ SwathCmdRos::SwathCmdRos() :
 
     std::string path = ros::package::getPath("bathy_sonar_ros");
     std::string configPath;
+
     m_pnh.param<std::string>("swath_rt_config_file", configPath, path + "/config/swathRT/RTsettings.ini");
     m_swathProcess->setConfigPath(configPath);
 
@@ -38,11 +39,16 @@ SwathCmdRos::SwathCmdRos() :
 }
 
 void SwathCmdRos::initialize() {
+
+    bool run_swath_rt;
+    m_pnh.param<bool>("run_swath_rt", run_swath_rt, false);
     std::shared_ptr<SwathCmdRos> that = shared_from_this();
     m_swathCom->setRos(that);
-    m_swathProcess->start();
 
-    std::this_thread::sleep_for(std::chrono::seconds(1));
+    if (run_swath_rt) {
+        m_swathProcess->start();
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
 
     m_swathCmd->startSonar();
     m_swathCmd->setTxState(true);
