@@ -1,0 +1,13 @@
+//
+// Created by cem on 20/03/2021.
+//
+
+#ifndef BATHY_SONAR_ROS_DEFINITIONS_H
+#define BATHY_SONAR_ROS_DEFINITIONS_H
+
+#define EXT_RX_PORT (52764)
+#define EXT_TX_PORT (52763)
+#define TEST_UDP_RX_PORT (52765)
+#define TEST_UDP_TX_PORT (52763)
+
+#endif //BATHY_SONAR_ROS_DEFINITIONS_H

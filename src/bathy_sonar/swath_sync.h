@@ -5,24 +5,26 @@
 #include <QTimer>
 #include <QThread>
 
+#include "swath_cmd.h"
+
 namespace soslab {
     class SwathSync : public QObject
     {
         Q_OBJECT
     public:
-        explicit SwathSync(QObject *parent = 0);
-
-        void sendUDP(const QByteArray &ba);
+        explicit SwathSync(std::shared_ptr<SwathCmd> cmd);
+        SwathSync(const SwathSync &_o) = default;
+        ~SwathSync() override = default;
 
     public slots:
         void sendZDA();
 
     signals:
-        void resultReady(const QStrin &result);
+        void resultReady(const QString &result);
 
     private:
         QTimer *timer;
-        QUdpSocket *socket;
+        std::shared_ptr<SwathCmd> cmd;
     };
 
 }

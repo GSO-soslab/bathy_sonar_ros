@@ -1,29 +1,29 @@
 #include <thread>
-#include "swath_cmd_ros.h"
+#include "swath_ros.h"
 #include "swath_proc.h"
 #include "swath_cmd.h"
-#include "swath_com.h"
+#include "swath_sync.h"
 #include "bathy_sonar_ros/SideScan.h"
 #include "ros/package.h"
 #include "sensor_msgs/PointCloud2.h"
 
 using namespace soslab;
 
-SwathCmdRos::SwathCmdRos() :
+SwathRos::SwathRos() :
     m_pnh("~")
 {
     m_swathCmd = std::make_shared<SwathCmd>();
 
-    m_swathCom = std::make_shared<SwathCom>();
+    m_swathSync = std::make_shared<SwathSync>(m_swathCmd);
 
     m_swathProcess = std::make_shared<SwathProcess>();
 
-    m_start_sonar_service = m_pnh.advertiseService("start_sonar", &SwathCmdRos::startSonar, this);
-    m_stop_sonar_service = m_pnh.advertiseService("stop_sonar", &SwathCmdRos::stopSonar, this);
-    m_enable_tx_service = m_pnh.advertiseService("enable_tx", &SwathCmdRos::enableTx, this);
-    m_disable_tx_service = m_pnh.advertiseService("disable_tx", &SwathCmdRos::disableTx, this);
-    m_enable_udp_service = m_pnh.advertiseService("enable_udp", &SwathCmdRos::enableUdp, this);
-    m_disable_udp_service = m_pnh.advertiseService("disable_udp", &SwathCmdRos::disableUdp, this);
+    m_start_sonar_service = m_pnh.advertiseService("start_sonar", &SwathRos::startSonar, this);
+    m_stop_sonar_service = m_pnh.advertiseService("stop_sonar", &SwathRos::stopSonar, this);
+    m_enable_tx_service = m_pnh.advertiseService("enable_tx", &SwathRos::enableTx, this);
+    m_disable_tx_service = m_pnh.advertiseService("disable_tx", &SwathRos::disableTx, this);
+    m_enable_udp_service = m_pnh.advertiseService("enable_udp", &SwathRos::enableUdp, this);
+    m_disable_udp_service = m_pnh.advertiseService("disable_udp", &SwathRos::disableUdp, this);
 
     std::string path = ros::package::getPath("bathy_sonar_ros");
     std::string configPath;
@@ -38,74 +38,74 @@ SwathCmdRos::SwathCmdRos() :
 
 }
 
-void SwathCmdRos::initialize() {
+void SwathRos::initialize() {
 
     bool run_swath_rt;
     m_pnh.param<bool>("run_swath_rt", run_swath_rt, false);
-    std::shared_ptr<SwathCmdRos> that = shared_from_this();
-    m_swathCom->setRos(that);
+    std::shared_ptr<SwathRos> that = shared_from_this();
     if (run_swath_rt) {
         m_swathProcess->start();
         std::this_thread::sleep_for(std::chrono::seconds(1));
     }
 
+    m_swathCmd->setRos(that);
     m_swathCmd->startSonar();
     m_swathCmd->setTxState(true);
     m_swathCmd->setUdpState(true);
 }
 
-void SwathCmdRos::destroy() {
+void SwathRos::destroy() {
     m_swathProcess->stop();
 }
 
 
-bool SwathCmdRos::startSonar(std_srvs::Trigger::Request& req,
-                             std_srvs::Trigger::Response& res) {
+bool SwathRos::startSonar(std_srvs::Trigger::Request& _req,
+                          std_srvs::Trigger::Response& _res) {
     m_swathCmd->startSonar();
     // todo: fill the response
     return true;
 }
 
-bool SwathCmdRos::stopSonar(std_srvs::Trigger::Request &req,
-                            std_srvs::Trigger::Response &res) {
+bool SwathRos::stopSonar(std_srvs::Trigger::Request &_req,
+                         std_srvs::Trigger::Response &_res) {
     m_swathCmd->stopSonar();
     // todo: fill the response
     return true;
 }
 
-bool SwathCmdRos::enableTx(std_srvs::Trigger::Request &req,
-                           std_srvs::Trigger::Response &res) {
+bool SwathRos::enableTx(std_srvs::Trigger::Request &_req,
+                        std_srvs::Trigger::Response &_res) {
     m_swathCmd->setTxState(true);
     // todo: fill the response
     return true;
 }
 
-bool SwathCmdRos::disableTx(std_srvs::Trigger::Request &req,
-                            std_srvs::Trigger::Response &res) {
+bool SwathRos::disableTx(std_srvs::Trigger::Request &_req,
+                         std_srvs::Trigger::Response &_res) {
     m_swathCmd->setTxState(false);
     // todo: fill the response
     return true;
 }
 
-bool SwathCmdRos::enableUdp(std_srvs::Trigger::Request &req,
-                            std_srvs::Trigger::Response &res) {
+bool SwathRos::enableUdp(std_srvs::Trigger::Request &_req,
+                         std_srvs::Trigger::Response &_res) {
     m_swathCmd->setUdpState(true);
     // todo: fill the response
     return true;
 }
 
-bool SwathCmdRos::disableUdp(std_srvs::Trigger::Request &req,
-                             std_srvs::Trigger::Response &res) {
+bool SwathRos::disableUdp(std_srvs::Trigger::Request &_req,
+                          std_srvs::Trigger::Response &_res) {
     m_swathCmd->setUdpState(false);
     // todo: fill the response
     return true;
 }
 
-void SwathCmdRos::publish() {
+void SwathRos::publish() {
 
 }
 
-void SwathCmdRos::publishPointCloud(std::vector<sample> samples) {
+void SwathRos::publishPointCloud(std::vector<sample> _samples) {
     const uint32_t POINT_STEP = 16;
     sensor_msgs::PointCloud2 msg;
 /*
@@ -144,14 +144,14 @@ void SwathCmdRos::publishPointCloud(std::vector<sample> samples) {
     msg.fields[3].offset = 12;
     msg.fields[3].datatype = sensor_msgs::PointField::FLOAT32;
     msg.fields[3].count = 1;
-    msg.data.resize(std::max((size_t)1, samples.size()) * POINT_STEP, 0x00);
+    msg.data.resize(std::max((size_t)1, _samples.size()) * POINT_STEP, 0x00);
     msg.point_step = POINT_STEP;
     msg.row_step = msg.data.size();
     msg.height = 1;
     msg.width = msg.row_step / POINT_STEP;
     uint8_t *ptr = msg.data.data();
 
-    for(const auto& sample : samples) {
+    for(const auto& sample : _samples) {
         if(sample.m_valid) {
             *(reinterpret_cast<float*>(ptr + 0)) = sample.m_range * sample.m_angle_c;
             *(reinterpret_cast<float*>(ptr + 4)) = 0;
@@ -175,31 +175,31 @@ void SwathCmdRos::publishPointCloud(std::vector<sample> samples) {
 */
 }
 
-void SwathCmdRos::publishSonarData(std::vector<sample> samples, sonar_data_header header) {
+void SwathRos::publishSonarData(std::vector<sample> _samples, sonar_data_header _header) {
     bathy_sonar_ros::SideScan msg;
-    msg.test_sec = header.timeSecSonar;
-    msg.test_msec = header.timeMsecSonar;
-    msg.channel = header.tdrChannel;
-    msg.ping_num = header.pingNum;
-    msg.operate_freq = header.operatingFreq;
-    msg.rx_period = header.rxPeriod;
-    msg.sv = header.sv;
-    msg.tx_cycles = header.txCycles;
-    msg.sample_size = header.nProcSamples;
+    msg.test_sec = _header.timeSecSonar;
+    msg.test_msec = _header.timeMsecSonar;
+    msg.channel = _header.tdrChannel;
+    msg.ping_num = _header.pingNum;
+    msg.operate_freq = _header.operatingFreq;
+    msg.rx_period = _header.rxPeriod;
+    msg.sv = _header.sv;
+    msg.tx_cycles = _header.txCycles;
+    msg.sample_size = _header.nProcSamples;
 
 
-    msg.ranges.resize(samples.size());
-    msg.angle_c.resize(samples.size());
-    msg.angle_s.resize(samples.size());
-    msg.amplitude.resize(samples.size());
-    msg.valid.resize(samples.size());
+    msg.ranges.resize(_samples.size());
+    msg.angle_c.resize(_samples.size());
+    msg.angle_s.resize(_samples.size());
+    msg.amplitude.resize(_samples.size());
+    msg.valid.resize(_samples.size());
 
-    for(int i = 0 ; i < samples.size() ; i++) {
-        msg.ranges[i] = samples[i].m_range;
-        msg.angle_c[i] = samples[i].m_angle_c;
-        msg.angle_s[i] = samples[i].m_angle_s;
-        msg.amplitude[i] = samples[i].m_amp;
-        msg.valid[i] = samples[i].m_valid;
+    for(int i = 0 ; i < _samples.size() ; i++) {
+        msg.ranges[i] = _samples[i].m_range;
+        msg.angle_c[i] = _samples[i].m_angle_c;
+        msg.angle_s[i] = _samples[i].m_angle_s;
+        msg.amplitude[i] = _samples[i].m_amp;
+        msg.valid[i] = _samples[i].m_valid;
     }
 
     m_sonarPublisher.publish(msg);

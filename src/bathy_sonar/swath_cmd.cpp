@@ -1,4 +1,5 @@
 #include "swath_cmd.h"
+#include "swath_ros.h"
 
 #include <qt5/QtNetwork/QUdpSocket>
 #include <qt5/QtNetwork/QHostAddress>
@@ -27,7 +28,7 @@ SwathCmd::SwathCmd() : QObject(nullptr)
     m_setTargetIp(m_IPAddress);
     m_udpSocket = std::make_shared<QUdpSocket>();
     for(int i = 0 ; i < 10 ; i++) {
-        if (!m_udpSocket->bind(QHostAddress(QHostAddress::Any), TEST_UDP_RX_PORT)) {
+        if (!m_udpSocket->bind(QHostAddress(QHostAddress::Any), EXT_RX_PORT)) {
             ROS_WARN_STREAM("could not bind UDP socket to port " << TEST_UDP_RX_PORT << ", try: " << i);
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         } else {
@@ -35,26 +36,32 @@ SwathCmd::SwathCmd() : QObject(nullptr)
         }
     }
     connect(m_udpSocket.get(), &QUdpSocket::readyRead, this, &SwathCmd::m_readyRead);
+
+    m_parser = std::make_shared<SimpleReadParsedData>();
 }
 
-SwathCmd::SwathCmd(const SwathCmd &o) : QObject(nullptr) {
-    m_udpSocket = o.m_udpSocket;
-    m_ha = o.m_ha;
-    m_txOn = o.m_txOn;
-    m_sendUDP = o.m_sendUDP;
-    m_writeToFile = o.m_writeToFile;
-    m_range = o.m_range;
-    m_IPAddress = o.m_IPAddress;
+SwathCmd::SwathCmd(const SwathCmd &_o) : QObject(nullptr) {
+    m_udpSocket = _o.m_udpSocket;
+    m_ha = _o.m_ha;
+    m_txOn = _o.m_txOn;
+    m_sendUDP = _o.m_sendUDP;
+    m_writeToFile = _o.m_writeToFile;
+    m_range = _o.m_range;
+    m_IPAddress = _o.m_IPAddress;
 }
 
 void SwathCmd::initialize() {
 
 }
 
-void SwathCmd::m_sendMessage(const QByteArray &byteArray) {
-    if(m_udpSocket->writeDatagram(byteArray, *m_ha, TEST_UDP_TX_PORT) != byteArray.size()) {
+void SwathCmd::m_sendMessage(const QByteArray &_ba) {
+    if(m_udpSocket->writeDatagram(_ba, *m_ha, EXT_TX_PORT) != _ba.size()) {
         qDebug() << "could not write all bytes";
     }
+}
+
+void SwathCmd::sendMessage(const QByteArray _ba) {
+    m_sendMessage(_ba);
 }
 
 void SwathCmd::m_readyRead() {
@@ -66,7 +73,11 @@ void SwathCmd::m_readyRead() {
         dgsize = m_udpSocket->pendingDatagramSize();
         ba.resize(dgsize);
         m_udpSocket->readDatagram(ba.data(), dgsize, &addr, &port);
-        qDebug() << "ready read, bytes read: " << ba.size() << "from" << addr.toString() << ":" << port;
+        m_parser->readUDPData(&ba);
+        if(m_parser->getIsParsed()) {
+            m_ros->publishSonarData(m_parser->getSamples(), m_parser->getSonarHeader());
+            m_ros->publishPointCloud(m_parser->getSamples());
+        }
     }
 }
 
@@ -78,19 +89,19 @@ void SwathCmd::m_setupRemote() {
     m_sendNMEAMessage("SW", "PCT", QString("FILE,FLDR,") + m_folderName);
 }
 
-int SwathCmd::m_calcChecksum(QString message) {
-    return  m_calcChecksum(message.toStdString());
+int SwathCmd::m_calcChecksum(QString _msg) {
+    return  m_calcChecksum(_msg.toStdString());
 }
 
-int SwathCmd::m_calcChecksum(std::string message) {
+int SwathCmd::m_calcChecksum(std::string _msg) {
     int calcChecksum = 0;
     
-    if (message.size() != 0)
+    if (_msg.size() != 0)
     {
         // Must start with '$'
-        if (message[0] == '$')
+        if (_msg[0] == '$')
         {
-            std::string::size_type csPos = message.find_last_of("*");
+            std::string::size_type csPos = _msg.find_last_of("*");
             if (csPos != std::string::npos)
             {
                 // All characters between the second (after the '$') and up to
@@ -98,7 +109,7 @@ int SwathCmd::m_calcChecksum(std::string message) {
                 unsigned char csChar;							// character for checksumming
                 for (unsigned short i = 1; i < csPos; i++)
                 {
-                    csChar = message.at(i);
+                    csChar = _msg.at(i);
                     calcChecksum ^= csChar;
                 }
             }
@@ -107,17 +118,17 @@ int SwathCmd::m_calcChecksum(std::string message) {
     return calcChecksum;
 }
 
-void SwathCmd::m_sendNMEAMessage(const char *talker, const char *type, const char *data) {
-    m_sendNMEAMessage(talker, type, QString(data));
+void SwathCmd::m_sendNMEAMessage(const char *_talker, const char *_type, const char *_data) {
+    m_sendNMEAMessage(_talker, _type, QString(_data));
 }
 
-void SwathCmd::m_sendNMEAMessage(const char *talker, const char *type, const QString data) {
+void SwathCmd::m_sendNMEAMessage(const char *_talker, const char *_type, const QString _data) {
     QString message;
     message += "$";
-    message += talker;
-    message += type;
+    message += _talker;
+    message += _type;
     message += ",";
-    message += data;
+    message += _data;
     message += "*";
     int checksum = m_calcChecksum(message);
     char checksum_str[3];
@@ -127,27 +138,27 @@ void SwathCmd::m_sendNMEAMessage(const char *talker, const char *type, const QSt
     m_sendMessage(message.toLatin1());
 }
 
-void SwathCmd::m_checksumChars(int calcChecksum, char *checksum_str) {
-    sprintf(checksum_str, "%02X", calcChecksum);
+void SwathCmd::m_checksumChars(int _calcChecksum, char *_checksumStr) {
+    sprintf(_checksumStr, "%02X", _calcChecksum);
 }
 
-void SwathCmd::m_setTargetIp(QString ha) {
-    m_IPAddress = ha;
-    m_ha->setAddress(ha);
+void SwathCmd::m_setTargetIp(QString _ha) {
+    m_IPAddress = _ha;
+    m_ha->setAddress(_ha);
 }
 
 void SwathCmd::testTrigger() {
     m_sendNMEAMessage("SW", "PCT", "TEST_TRIGGER");
 }
 
-void SwathCmd::setUdpState(bool state) {
-    m_sendUDP = state;
-    m_sendNMEAMessage("SW", "PCT", QString("UDP,SEND,") + (state ? "ON" : "OFF"));
+void SwathCmd::setUdpState(bool _state) {
+    m_sendUDP = _state;
+    m_sendNMEAMessage("SW", "PCT", QString("UDP,SEND,") + (_state ? "ON" : "OFF"));
 }
 
-void SwathCmd::setTxState(bool state) {
-    m_txOn= state;
-    m_sendNMEAMessage("SW", "PCT", QString("SNR,TX,") + (state ? "ON" : "OFF"));
+void SwathCmd::setTxState(bool _state) {
+    m_txOn= _state;
+    m_sendNMEAMessage("SW", "PCT", QString("SNR,TX,") + (_state ? "ON" : "OFF"));
 }
 
 void SwathCmd::startSonar() {
@@ -167,8 +178,8 @@ void SwathCmd::killSonar() {
     m_sendNMEAMessage("SW", "PCT", "KILL");
 }
 
-void SwathCmd::setRange(int range) {
-    m_range = range;
+void SwathCmd::setRange(int _range) {
+    m_range = _range;
     m_sendNMEAMessage("SW", "PCT", QString("SNR,RNG,") + QString::number(m_range));
 }
 

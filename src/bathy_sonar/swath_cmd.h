@@ -1,32 +1,38 @@
 #ifndef BATHY_SONAR_ROS_SWATH_CMD_H
 #define BATHY_SONAR_ROS_SWATH_CMD_H
 
+#include "definitions.h"
+
 // std
 #include <string>
 #include <memory>
 #include <QObject>
+
+// Vendor
+#include "../vendor/simplereadparseddata.h"
 
 // Forward declarations
 class QUdpSocket;
 class QHostAddress;
 class QByteArray;
 
-#define TEST_UDP_RX_PORT (52765)
-#define TEST_UDP_TX_PORT (52763)
-
 namespace soslab {
-    
+
+    class SwathRos;
+
     class SwathCmd : public QObject {
         Q_OBJECT
     public:
         explicit SwathCmd();
       
-        SwathCmd(const SwathCmd &o);
+        SwathCmd(const SwathCmd &_o);
 
         ~SwathCmd() override = default;
 
         void initialize();
-        
+
+        void sendMessage(const QByteArray _ba);
+
         void startSonar();
     
         void stopSonar();
@@ -37,11 +43,13 @@ namespace soslab {
         
         void testTrigger();
    
-        void setUdpState(bool state);
+        void setUdpState(bool _state);
         
-        void setRange(int range);
+        void setRange(int _range);
         
-        void setTxState(bool state);
+        void setTxState(bool _state);
+
+        void setRos(std::shared_ptr<SwathRos> _ros) { m_ros = _ros; }
 
         bool testCommunication();
 
@@ -52,19 +60,19 @@ namespace soslab {
 
         void m_setupRemote();
         
-        void m_sendMessage(const QByteArray &ba);
+        void m_sendMessage(const QByteArray &_ba);
         
-        void m_setTargetIp(QString ha);
+        void m_setTargetIp(QString _ha);
     
-        void m_sendNMEAMessage(const char* talker, const char* type, const char* data);
+        void m_sendNMEAMessage(const char* _talker, const char* _type, const char* _data);
         
-        void m_sendNMEAMessage(const char* talker, const char* type, const QString data);
+        void m_sendNMEAMessage(const char* _talker, const char* _type, const QString _data);
     
-        static int m_calcChecksum(std::string message);
+        static int m_calcChecksum(std::string _msg);
         
-        static int m_calcChecksum(QString message);
+        static int m_calcChecksum(QString _msg);
         
-        static void m_checksumChars(int calcChecksum, char* checksum_str);
+        static void m_checksumChars(int _calcChecksum, char* _checksumStr);
         
     private:
         // Current commanded state of the remote system
@@ -83,6 +91,9 @@ namespace soslab {
     
         std::shared_ptr<QHostAddress> m_ha;
 
+        std::shared_ptr<SimpleReadParsedData> m_parser;
+
+        std::shared_ptr<SwathRos> m_ros;
     };
     
 }

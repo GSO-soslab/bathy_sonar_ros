@@ -1,6 +1,6 @@
 
 #include "ros/ros.h"
-#include "src/cmd/swath_cmd_ros.h"
+#include "bathy_sonar/swath_ros.h"
 
 #include <qcoreapplication.h>
 #include <thread>
@@ -8,7 +8,7 @@
 
 using namespace soslab;
 
-std::shared_ptr<SwathCmdRos> controller;
+std::shared_ptr<SwathRos> controller;
 
 void sighandler(int sig) {
     if(ros::ok()) {
@@ -26,7 +26,7 @@ int main(int argc, char* argv[]) {
 
     signal(SIGINT, sighandler);
 
-    controller = std::make_shared<SwathCmdRos>();
+    controller = std::make_shared<SwathRos>();
     controller->initialize();
 
     auto rosSpin = std::thread([](){
