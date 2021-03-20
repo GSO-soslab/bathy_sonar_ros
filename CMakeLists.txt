@@ -158,12 +158,13 @@ target_link_libraries(${PROJECT_NAME}_vendor_com
 )
 
 ## SOSLAB
-add_library(${PROJECT_NAME}_com
-  src/cmd/swath_com.cpp
-  src/cmd/swath_cmd.cpp
-  src/cmd/swath_proc.cpp
+add_library(${PROJECT_NAME}_sonar
+  src/bathy_sonar/swath_com.cpp
+  src/bathy_sonar/swath_cmd.cpp
+  src/bathy_sonar/swath_proc.cpp
+  src/bathy_sonar/swath_sync.cpp
 )
-target_link_libraries(${PROJECT_NAME}_com
+target_link_libraries(${PROJECT_NAME}_sonar
   Qt5::Core
   Qt5::Network
   pthread
@@ -171,14 +172,13 @@ target_link_libraries(${PROJECT_NAME}_com
 )
 
 add_library(${PROJECT_NAME}_cmd_ros
-  src/cmd/swath_cmd_ros.cpp
-  src/cmd/swath_proc.cpp src/cmd/swath_proc.h src/vendor/PPSProc.h src/vendor/HardwareInterfaceV2.h)
-target_link_libraries(${PROJECT_NAME}_cmd_ros
-  ${PROJECT_NAME}_com
-  ${catkin_LIBRARIES}
+  src/bathy_sonar/swath_cmd_ros.cpp
 )
 
-
+target_link_libraries(${PROJECT_NAME}_cmd_ros
+  ${PROJECT_NAME}_sonar
+  ${catkin_LIBRARIES}
+)
 
 add_dependencies(${PROJECT_NAME}_cmd_ros
   ${${PROJECT_NAME}_EXPORTED_TARGETS}

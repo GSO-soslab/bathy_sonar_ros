@@ -44,7 +44,6 @@ void SwathCmdRos::initialize() {
     m_pnh.param<bool>("run_swath_rt", run_swath_rt, false);
     std::shared_ptr<SwathCmdRos> that = shared_from_this();
     m_swathCom->setRos(that);
-
     if (run_swath_rt) {
         m_swathProcess->start();
         std::this_thread::sleep_for(std::chrono::seconds(1));

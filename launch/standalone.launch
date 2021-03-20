@@ -1,0 +1,18 @@
+<?xml version="1.0" ?>
+
+<launch>
+
+  <arg name="frame_id" default="bathyswath_sonar" />
+  <arg name="time_sync" default="false" />
+  <node  name="test_node" pkg="bathyswath_ros" type="bathyswath_ros" output="screen" >
+      <param name="frame_id" value="$(arg frame_id)" />
+      <param name="time_sync" value="$(arg time_sync)" />
+  </node>
+
+ <node pkg="tf" type="static_transform_publisher" name="port_broadcaster"  args= "0.0  0.1 -0.089  1.5707963 0.523598767 0.0 bathyswath_sonar port_transducer 100" />
+ <node pkg="tf" type="static_transform_publisher" name="starboard_broadcaster" args= "0.0 -0.1 -0.089 -1.5707963 0.523598767 0.0 bathyswath_sonar strd_transducer 100" />
+
+  <node name="rviz" pkg="rviz" type="rviz"  args="--opengl 300 -d $(find bathyswath_ros)/rviz/test.rviz" />
+
+</launch>
+
