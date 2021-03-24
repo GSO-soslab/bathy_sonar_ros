@@ -26,6 +26,12 @@ namespace soslab {
 
         ros::NodeHandle m_pnh;
 
+        std::string frame_id;
+
+        std::string channel_1_frame_id;
+
+        std::string channel_2_frame_id;
+
         ros::ServiceServer m_start_sonar_service;
 
         ros::ServiceServer m_stop_sonar_service;

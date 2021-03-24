@@ -28,6 +28,10 @@ SwathRos::SwathRos() :
     std::string path = ros::package::getPath("bathy_sonar_ros");
     std::string configPath;
 
+    m_pnh.param<std::string>("frame_id", frame_id, "sidescan");
+    m_pnh.param<std::string>("channel_1_frame_id", channel_1_frame_id, "channel_1");
+    m_pnh.param<std::string>("channel_2_frame_id", channel_2_frame_id, "channel_2");
+
     m_pnh.param<std::string>("swath_rt_config_file", configPath, path + "/config/swathRT/RTsettings.ini");
     m_swathProcess->setConfigPath(configPath);
 
@@ -125,7 +129,7 @@ void SwathRos::publishPointCloud(std::vector<sample> _samples) {
     pubDeltaTime.publish(deltaTime);
 */
     msg.header.stamp = ros::Time::now();
-    msg.header.frame_id = "sidescan";
+    msg.header.frame_id = frame_id;
 
     msg.fields.resize(4);
     msg.fields[0].name = "x";
@@ -164,13 +168,12 @@ void SwathRos::publishPointCloud(std::vector<sample> _samples) {
     m_pointCloudPublisher.publish(msg);
 /*
     if(scan->channel == 1){
-        msg.header.frame_id = "port_transducer";
+        msg.header.frame_id = channel_1_frame_id;
         pubPort.publish(msg); // channel 1
     }
     else{
-        msg.header.frame_id = "strd_transducer";
+        msg.header.frame_id = channel_2_frame_id;
         pubStrd.publish(msg); // channel 2
-`
     }
 */
 }
