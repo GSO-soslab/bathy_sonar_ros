@@ -1,17 +1,25 @@
 <?xml version="1.0" ?>
 <launch>
 
-  <arg name="frame_id" default="sidescan" />
-  <node  name="test_node" pkg="bathy_sonar_ros" type="bathy_sonar_ros" output="screen" >
-      <param name="frame_id" value="$(arg frame_id)" />
-  </node>
+    <arg name="frame_id" default="sidescan" />
+    <arg name="channel_1_frame_id" default="ch1" />
+    <arg name="channel_2_frame_id" default="ch2" />
+    <node  name="test_node" pkg="bathy_sonar_ros" type="bathy_sonar_ros" output="screen" >
+        <param name="frame_id" value="$(arg frame_id)"/>
+        <param name="channel_1_frame_id" value="$(arg channel_1_frame_id)"/>
+        <param name="channel_2_frame_id" value="$(arg channel_2_frame_id)"/>
+    </node>
 
-   <node
+    <node
            pkg="tf"
            type="static_transform_publisher"
            name="port_broadcaster"
-           args="0.0  0.1 -0.089  1.5707963 0.523598767 0.0 base_link $(arg frame_id) 100" />
-
+           args="0.0  0.1 -0.089  1.5707963 0.523598767 0.0 $(arg frame_id) $(arg channel_1_frame_id) 100" />
+    <node
+           pkg="tf"
+           type="static_transform_publisher"
+           name="starboard_broadcaster"
+           args="0.0 -0.1 -0.089 -1.5707963 0.523598767 0.0 $(arg frame_id) $(arg channel_2_frame_id) 100" />
 
 </launch>
 

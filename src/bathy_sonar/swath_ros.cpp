@@ -36,9 +36,14 @@ SwathRos::SwathRos() :
     m_swathProcess->setConfigPath(configPath);
 
 
-    m_sonarPublisher = m_pnh.advertise<bathy_sonar_ros::SideScan>("sidescan",1000);
+    m_sonarPublisher_ch1 = m_pnh.advertise<bathy_sonar_ros::SideScan>("ch1/sidescan",1000);
 
-    m_pointCloudPublisher = m_pnh.advertise<sensor_msgs::PointCloud2>("pointcloud",1000);
+    m_pointCloudPublisher_ch1 = m_pnh.advertise<sensor_msgs::PointCloud2>("ch1/pointcloud",1000);
+
+
+    m_sonarPublisher_ch2 = m_pnh.advertise<bathy_sonar_ros::SideScan>("ch2/sidescan",1000);
+
+    m_pointCloudPublisher_ch2 = m_pnh.advertise<sensor_msgs::PointCloud2>("ch2/pointcloud",1000);
 
 }
 
@@ -109,7 +114,7 @@ void SwathRos::publish() {
 
 }
 
-void SwathRos::publishPointCloud(std::vector<sample> _samples) {
+void SwathRos::publishPointCloud(std::vector<sample> _samples, sonar_data_header _header) {
     const uint32_t POINT_STEP = 16;
     sensor_msgs::PointCloud2 msg;
 /*
@@ -165,17 +170,15 @@ void SwathRos::publishPointCloud(std::vector<sample> _samples) {
         }
     }
 
-    m_pointCloudPublisher.publish(msg);
-/*
-    if(scan->channel == 1){
+    if(_header.tdrChannel == 1){
         msg.header.frame_id = channel_1_frame_id;
-        pubPort.publish(msg); // channel 1
+        m_pointCloudPublisher_ch1.publish(msg); // channel 1
     }
     else{
         msg.header.frame_id = channel_2_frame_id;
-        pubStrd.publish(msg); // channel 2
+        m_pointCloudPublisher_ch2.publish(msg); // channel 2
     }
-*/
+
 }
 
 void SwathRos::publishSonarData(std::vector<sample> _samples, sonar_data_header _header) {
@@ -205,6 +208,14 @@ void SwathRos::publishSonarData(std::vector<sample> _samples, sonar_data_header 
         msg.valid[i] = _samples[i].m_valid;
     }
 
-    m_sonarPublisher.publish(msg);
+
+    if(_header.tdrChannel == 1){
+        msg.header.frame_id = channel_1_frame_id;
+        m_sonarPublisher_ch1.publish(msg); // channel 2
+    }
+    else{
+        msg.header.frame_id = channel_2_frame_id;
+        m_sonarPublisher_ch2.publish(msg); // channel 2
+    }
 
 }

@@ -44,9 +44,13 @@ namespace soslab {
 
         ros::ServiceServer m_disable_udp_service;
 
-        ros::Publisher m_sonarPublisher;
+        ros::Publisher m_sonarPublisher_ch1;
 
-        ros::Publisher m_pointCloudPublisher;
+        ros::Publisher m_pointCloudPublisher_ch1;
+
+        ros::Publisher m_sonarPublisher_ch2;
+
+        ros::Publisher m_pointCloudPublisher_ch2;
 
     public:
         SwathRos();
@@ -57,7 +61,7 @@ namespace soslab {
 
         void publish();
 
-        void publishPointCloud(std::vector<sample> _samples);
+        void publishPointCloud(std::vector<sample> _samples, sonar_data_header _header);
 
         void publishSonarData(std::vector<sample> _samples, sonar_data_header _header);
 

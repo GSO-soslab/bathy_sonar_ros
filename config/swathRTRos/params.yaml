@@ -1,1 +1,3 @@
 run_swath_rt: false
+channel_1_frame_id: ch1
+channel_2_frame_id: ch2

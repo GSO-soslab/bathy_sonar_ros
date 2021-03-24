@@ -76,7 +76,7 @@ void SwathCmd::m_readyRead() {
         m_parser->readUDPData(&ba);
         if(m_parser->getIsParsed()) {
             m_ros->publishSonarData(m_parser->getSamples(), m_parser->getSonarHeader());
-            m_ros->publishPointCloud(m_parser->getSamples());
+            m_ros->publishPointCloud(m_parser->getSamples(), m_parser->getSonarHeader());
         }
     }
 }
