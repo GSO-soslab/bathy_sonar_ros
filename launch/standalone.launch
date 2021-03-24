@@ -4,7 +4,7 @@
     <arg name="frame_id" default="sidescan" />
     <arg name="channel_1_frame_id" default="ch1" />
     <arg name="channel_2_frame_id" default="ch2" />
-    <node  name="test_node" pkg="bathy_sonar_ros" type="bathy_sonar_ros" output="screen" >
+    <node  name="test_node" pkg="bathy_sonar_ros" type="bathy_sonar_ros_node" output="screen" >
         <param name="frame_id" value="$(arg frame_id)"/>
         <param name="channel_1_frame_id" value="$(arg channel_1_frame_id)"/>
         <param name="channel_2_frame_id" value="$(arg channel_2_frame_id)"/>
