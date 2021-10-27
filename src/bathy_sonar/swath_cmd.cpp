@@ -54,9 +54,12 @@ void SwathCmd::initialize() {
 
 }
 
-void SwathCmd::m_sendMessage(const QByteArray &_ba) {
+bool SwathCmd::m_sendMessage(const QByteArray &_ba) {
     if(m_udpSocket->writeDatagram(_ba, *m_ha, EXT_TX_PORT) != _ba.size()) {
         qDebug() << "could not write all bytes";
+        return false;
+    } else {
+        return true;
     }
 }
 
@@ -81,16 +84,18 @@ void SwathCmd::m_readyRead() {
     }
 }
 
-void SwathCmd::m_setupRemote() {
-    m_sendNMEAMessage("SW", "PCT", QString("SNR,TX,") + (m_txOn ? "ON" : "OFF"));
-    m_sendNMEAMessage("SW", "PCT", QString("UDP,SEND,") + (m_sendUDP ? "ON" : "OFF"));
-    m_sendNMEAMessage("SW", "PCT", QString("FILE,WRITE,") + (m_writeToFile ? "ON" : "OFF"));
-    m_sendNMEAMessage("SW", "PCT", QString("SNR,RNG,") + QString::number(m_range));
-    m_sendNMEAMessage("SW", "PCT", QString("FILE,FLDR,") + m_folderName);
+bool SwathCmd::m_setupRemote() {
+    bool result = true;
+    result &= m_sendNMEAMessage("SW", "PCT", QString("SNR,TX,") + (m_txOn ? "ON" : "OFF"));
+    result &= m_sendNMEAMessage("SW", "PCT", QString("UDP,SEND,") + (m_sendUDP ? "ON" : "OFF"));
+    result &= m_sendNMEAMessage("SW", "PCT", QString("FILE,WRITE,") + (m_writeToFile ? "ON" : "OFF"));
+    result &= m_sendNMEAMessage("SW", "PCT", QString("SNR,RNG,") + QString::number(m_range));
+    result &= m_sendNMEAMessage("SW", "PCT", QString("FILE,FLDR,") + m_folderName);
+    return result;
 }
 
 int SwathCmd::m_calcChecksum(QString _msg) {
-    return  m_calcChecksum(_msg.toStdString());
+    return m_calcChecksum(_msg.toStdString());
 }
 
 int SwathCmd::m_calcChecksum(std::string _msg) {
@@ -118,11 +123,11 @@ int SwathCmd::m_calcChecksum(std::string _msg) {
     return calcChecksum;
 }
 
-void SwathCmd::m_sendNMEAMessage(const char *_talker, const char *_type, const char *_data) {
-    m_sendNMEAMessage(_talker, _type, QString(_data));
+bool SwathCmd::m_sendNMEAMessage(const char *_talker, const char *_type, const char *_data) {
+    return m_sendNMEAMessage(_talker, _type, QString(_data));
 }
 
-void SwathCmd::m_sendNMEAMessage(const char *_talker, const char *_type, const QString _data) {
+bool SwathCmd::m_sendNMEAMessage(const char *_talker, const char *_type, const QString _data) {
     QString message;
     message += "$";
     message += _talker;
@@ -135,7 +140,7 @@ void SwathCmd::m_sendNMEAMessage(const char *_talker, const char *_type, const Q
     m_checksumChars(checksum, checksum_str);
     message += checksum_str;
     message += "\r\n";
-    m_sendMessage(message.toLatin1());
+    return m_sendMessage(message.toLatin1());
 }
 
 void SwathCmd::m_checksumChars(int _calcChecksum, char *_checksumStr) {
@@ -147,40 +152,42 @@ void SwathCmd::m_setTargetIp(QString _ha) {
     m_ha->setAddress(_ha);
 }
 
-void SwathCmd::testTrigger() {
-    m_sendNMEAMessage("SW", "PCT", "TEST_TRIGGER");
+bool SwathCmd::testTrigger() {
+    return m_sendNMEAMessage("SW", "PCT", "TEST_TRIGGER");
 }
 
-void SwathCmd::setUdpState(bool _state) {
+bool SwathCmd::setUdpState(bool _state) {
     m_sendUDP = _state;
-    m_sendNMEAMessage("SW", "PCT", QString("UDP,SEND,") + (_state ? "ON" : "OFF"));
+    return m_sendNMEAMessage("SW", "PCT", QString("UDP,SEND,") + (_state ? "ON" : "OFF"));
 }
 
-void SwathCmd::setTxState(bool _state) {
+bool SwathCmd::setTxState(bool _state) {
     m_txOn= _state;
-    m_sendNMEAMessage("SW", "PCT", QString("SNR,TX,") + (_state ? "ON" : "OFF"));
+    return m_sendNMEAMessage("SW", "PCT", QString("SNR,TX,") + (_state ? "ON" : "OFF"));
 }
 
-void SwathCmd::startSonar() {
-    m_setupRemote();
-    m_sendNMEAMessage("P", "MISS", "LINE_START");
+bool SwathCmd::startSonar() {
+    if(!m_setupRemote()) {
+        return false;
+    }
+    return m_sendNMEAMessage("P", "MISS", "LINE_START");
 }
 
-void SwathCmd::stopSonar() {
-    m_sendNMEAMessage("P", "MISS", "LINE_END");
+bool SwathCmd::stopSonar() {
+    return m_sendNMEAMessage("P", "MISS", "LINE_END");
 }
 
-void SwathCmd::resetSonar() {
-    m_sendNMEAMessage("SW", "PCT", "SNR,RESET");
+bool SwathCmd::resetSonar() {
+    return m_sendNMEAMessage("SW", "PCT", "SNR,RESET");
 }
 
-void SwathCmd::killSonar() {
-    m_sendNMEAMessage("SW", "PCT", "KILL");
+bool SwathCmd::killSonar() {
+    return m_sendNMEAMessage("SW", "PCT", "KILL");
 }
 
-void SwathCmd::setRange(int _range) {
+bool SwathCmd::setRange(int _range) {
     m_range = _range;
-    m_sendNMEAMessage("SW", "PCT", QString("SNR,RNG,") + QString::number(m_range));
+    return m_sendNMEAMessage("SW", "PCT", QString("SNR,RNG,") + QString::number(m_range));
 }
 
 bool SwathCmd::testCommunication() {

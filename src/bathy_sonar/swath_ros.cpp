@@ -29,21 +29,23 @@ SwathRos::SwathRos() :
     std::string configPath;
 
     m_pnh.param<std::string>("frame_id", frame_id, "sidescan");
-    m_pnh.param<std::string>("channel_1_frame_id", channel_1_frame_id, "channel_1");
-    m_pnh.param<std::string>("channel_2_frame_id", channel_2_frame_id, "channel_2");
+    m_pnh.param<std::string>("channel_1_frame_id", channel_1_frame_id, "starboard_link");
+    m_pnh.param<std::string>("channel_2_frame_id", channel_2_frame_id, "port_link");
+    m_pnh.param<std::string>("channel_1_topic_namespace", channel_1_topic_namespace, "starboard");
+    m_pnh.param<std::string>("channel_2_topic_namespace", channel_2_topic_namespace, "port");
 
     m_pnh.param<std::string>("swath_rt_config_file", configPath, path + "/config/swathRT/RTsettings.ini");
     m_swathProcess->setConfigPath(configPath);
 
 
-    m_sonarPublisher_ch1 = m_pnh.advertise<bathy_sonar_ros::SideScan>("ch1/sidescan",1000);
+    m_sonarPublisher_ch1 = m_pnh.advertise<bathy_sonar_ros::SideScan>(channel_1_topic_namespace + "/sidescan",1000);
 
-    m_pointCloudPublisher_ch1 = m_pnh.advertise<sensor_msgs::PointCloud2>("ch1/pointcloud",1000);
+    m_pointCloudPublisher_ch1 = m_pnh.advertise<sensor_msgs::PointCloud2>(channel_1_topic_namespace + "/pointcloud",1000);
 
 
-    m_sonarPublisher_ch2 = m_pnh.advertise<bathy_sonar_ros::SideScan>("ch2/sidescan",1000);
+    m_sonarPublisher_ch2 = m_pnh.advertise<bathy_sonar_ros::SideScan>(channel_2_topic_namespace + "/sidescan",1000);
 
-    m_pointCloudPublisher_ch2 = m_pnh.advertise<sensor_msgs::PointCloud2>("ch2/pointcloud",1000);
+    m_pointCloudPublisher_ch2 = m_pnh.advertise<sensor_msgs::PointCloud2>(channel_2_topic_namespace + "ch2/pointcloud",1000);
 
 }
 
@@ -67,26 +69,19 @@ void SwathRos::destroy() {
     m_swathProcess->stop();
 }
 
-
 bool SwathRos::startSonar(std_srvs::Trigger::Request& _req,
                           std_srvs::Trigger::Response& _res) {
-    m_swathCmd->startSonar();
-    // todo: fill the response
-    return true;
+    return m_swathCmd->startSonar();
 }
 
 bool SwathRos::stopSonar(std_srvs::Trigger::Request &_req,
                          std_srvs::Trigger::Response &_res) {
-    m_swathCmd->stopSonar();
-    // todo: fill the response
-    return true;
+    return m_swathCmd->stopSonar();
 }
 
 bool SwathRos::enableTx(std_srvs::Trigger::Request &_req,
                         std_srvs::Trigger::Response &_res) {
-    m_swathCmd->setTxState(true);
-    // todo: fill the response
-    return true;
+    return m_swathCmd->setTxState(true);
 }
 
 bool SwathRos::disableTx(std_srvs::Trigger::Request &_req,
@@ -98,16 +93,12 @@ bool SwathRos::disableTx(std_srvs::Trigger::Request &_req,
 
 bool SwathRos::enableUdp(std_srvs::Trigger::Request &_req,
                          std_srvs::Trigger::Response &_res) {
-    m_swathCmd->setUdpState(true);
-    // todo: fill the response
-    return true;
+    return m_swathCmd->setUdpState(true);
 }
 
 bool SwathRos::disableUdp(std_srvs::Trigger::Request &_req,
                           std_srvs::Trigger::Response &_res) {
-    m_swathCmd->setUdpState(false);
-    // todo: fill the response
-    return true;
+    return m_swathCmd->setUdpState(false);
 }
 
 void SwathRos::publish() {

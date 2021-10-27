@@ -33,21 +33,21 @@ namespace soslab {
 
         void sendMessage(const QByteArray _ba);
 
-        void startSonar();
+        bool startSonar();
     
-        void stopSonar();
+        bool stopSonar();
    
-        void resetSonar();
+        bool resetSonar();
     
-        void killSonar();
+        bool killSonar();
         
-        void testTrigger();
+        bool testTrigger();
    
-        void setUdpState(bool _state);
+        bool setUdpState(bool _state);
         
-        void setRange(int _range);
+        bool setRange(int _range);
         
-        void setTxState(bool _state);
+        bool setTxState(bool _state);
 
         void setRos(std::shared_ptr<SwathRos> _ros) { m_ros = _ros; }
 
@@ -58,15 +58,15 @@ namespace soslab {
         
     private slots:
 
-        void m_setupRemote();
+        bool m_setupRemote();
         
-        void m_sendMessage(const QByteArray &_ba);
+        bool m_sendMessage(const QByteArray &_ba);
         
         void m_setTargetIp(QString _ha);
     
-        void m_sendNMEAMessage(const char* _talker, const char* _type, const char* _data);
+        bool m_sendNMEAMessage(const char* _talker, const char* _type, const char* _data);
         
-        void m_sendNMEAMessage(const char* _talker, const char* _type, const QString _data);
+        bool m_sendNMEAMessage(const char* _talker, const char* _type, const QString _data);
     
         static int m_calcChecksum(std::string _msg);
         

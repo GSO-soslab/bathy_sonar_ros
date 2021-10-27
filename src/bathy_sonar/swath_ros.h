@@ -32,6 +32,10 @@ namespace soslab {
 
         std::string channel_2_frame_id;
 
+        std::string channel_1_topic_namespace;
+
+        std::string channel_2_topic_namespace;
+
         ros::ServiceServer m_start_sonar_service;
 
         ros::ServiceServer m_stop_sonar_service;
