@@ -45,7 +45,7 @@ SwathRos::SwathRos() :
 
     m_sonarPublisher_ch2 = m_pnh.advertise<bathy_sonar_ros::SideScan>(channel_2_topic_namespace + "/sidescan",1000);
 
-    m_pointCloudPublisher_ch2 = m_pnh.advertise<sensor_msgs::PointCloud2>(channel_2_topic_namespace + "ch2/pointcloud",1000);
+    m_pointCloudPublisher_ch2 = m_pnh.advertise<sensor_msgs::PointCloud2>(channel_2_topic_namespace + "/pointcloud",1000);
 
 }
 
